@@ -38,6 +38,8 @@ MODULE ukca_emiss_mode_mod
 
 USE ukca_mode_setup,     ONLY: nmodes, cp_bc, cp_oc, cp_su, cp_mp
 
+USE ukca_emiss_struct_mod, ONLY:  maxlen_emiss_var_name
+
 USE ukca_config_specification_mod, ONLY: glomap_config, glomap_variables,      &
                                          i_suss_4mode,                         &
                                          i_sussbcoc_5mode,                     &
@@ -129,7 +131,7 @@ CONTAINS
 !---------------------------------------------------------------------------
 SUBROUTINE ukca_def_mode_emiss(tracer_name, lmode_emiss, icp,                  &
                                mode_frac_out, mode_diam_out, mode_stdev_out,   &
-                               lwarn_mismatch)
+                               vert_fact, lwarn_mismatch)
 
 IMPLICIT NONE
 
@@ -156,6 +158,9 @@ REAL, INTENT(OUT), OPTIONAL :: mode_stdev_out(nmodes)  ! units = 1
 ! This routine is called from multiple places and on every timestep, so this
 ! logical avoids duplicating the warnings: it is only true for the first call
 ! from ukca_emiss_init.
+
+CHARACTER (LEN=maxlen_emiss_var_name), INTENT(IN), OPTIONAL :: vert_fact
+                        ! vertical_scaling: surface, high_level, stratos_inj
 LOGICAL, INTENT(IN), OPTIONAL :: lwarn_mismatch
 
 ! Local variables
@@ -166,6 +171,7 @@ LOGICAL, INTENT(IN), OPTIONAL :: lwarn_mismatch
 LOGICAL, POINTER :: component(:,:)
 REAL,    POINTER :: fracbcem(:)
 REAL,    POINTER :: fracocem(:)
+REAL,    POINTER :: fracbbem(:)
 LOGICAL, POINTER :: mode (:)
 INTEGER, POINTER :: ncp
 
@@ -216,6 +222,8 @@ IF (lhook) CALL dr_hook(ModuleName//':'//RoutineName, zhook_in, zhook_handle)
 component   => glomap_variables%component
 fracbcem    => glomap_variables%fracbcem
 fracocem    => glomap_variables%fracocem
+fracbbem    => glomap_variables%fracbbem
+
 mode        => glomap_variables%mode
 ncp         => glomap_variables%ncp
 
@@ -350,13 +358,46 @@ CASE DEFAULT
 END SELECT
 
 ! Set mode_frac for all OM, BC species using central oc/bcfracem.
-SELECT CASE(tracer_name(1:3))
-CASE ('OM_')
+!SELECT CASE(tracer_name(1:3))
+!CASE ('OM_')
+SELECT CASE(TRIM(tracer_name))
+CASE ('OM_fossil', 'OM_biofuel')
   icp = this_cp_oc
   mode_frac(:) = fracocem(:)
-CASE ('BC_')
+!CASE ('BC_')
+CASE ('BC_fossil', 'BC_biofuel')
   icp = this_cp_bc
   mode_frac(:) = fracbcem(:)
+CASE ('BC_biomass')
+  icp = cp_bc
+  IF (PRESENT(vert_fact)) THEN
+    !print*,'BTJ1. vert_fact in BC_biomass is #', vert_fact(1:10),'#'
+    IF (vert_fact(1:11) == 'stratos_inj') THEN
+       !print*,'BTJ2. Yes I am setting mode_frac to fracbbem for BC_biomass'
+       mode_frac(:) = fracbbem(:)
+       mode_diam(:) = 150.0
+       mode_stdev(:) = 1.59
+    ELSE
+       mode_frac(:) = fracbcem(:)
+    END IF
+  ELSE
+    !print*,'BTJ1. vert_fact was not present for BC_biomass in ukca_def_mode_emiss'
+    mode_frac(:) = fracbcem(:)
+  END IF
+CASE('OM_biomass')
+  icp = cp_oc
+  IF (PRESENT(vert_fact)) THEN
+     IF (vert_fact(1:11) == 'stratos_inj') THEN
+        !print*,'BTJ3. Yes I am setting mode_frac to fracbbem for OM_biomass'
+        mode_frac(:) = fracbbem(:)
+        mode_diam(:) = 150.0
+        mode_stdev(:) = 1.59
+     ELSE
+        mode_frac(:) = fracocem(:)
+     END IF
+  ELSE
+    mode_frac(:) = fracocem(:)
+  END IF
 END SELECT
 
 ! Check that the arrays are now all set

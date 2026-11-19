@@ -226,6 +226,9 @@ TYPE :: glomap_variables_type
   ! Fraction of om ems to go into each mode
   REAL :: fracocem(nmodes)
 
+  ! Fraction of bb ems to go into each mode
+  REAL :: fracbbem(nmodes)
+
   ! Lower size limits of geometric mean diameter for each mode
   REAL :: ddplim0(nmodes)
 
@@ -481,6 +484,8 @@ ELSE
   glomap_variables_local%no_ions(1:ncp)=[3.0,0.0,0.0,2.0,0.0,0.0]
 END IF
 
+
+glomap_variables_local%fracbbem=[0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0]
 glomap_variables_local%fracbcem=[0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0]
 glomap_variables_local%fracocem=[0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0]
 ! fractions of primary BC/POM emissions to go to each mode at emission
@@ -686,6 +691,7 @@ ELSE
 END IF
 
 !
+glomap_variables_local%fracbbem=[0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0]
 glomap_variables_local%fracbcem=[0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0]
 glomap_variables_local%fracocem=[0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0]
 ! fractions of primary BC/POM emissions to go to each mode at emission
@@ -890,6 +896,7 @@ ELSE
 END IF
 
 !
+glomap_variables_local%fracbbem=[0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0]
 glomap_variables_local%fracbcem=[0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0]
 glomap_variables_local%fracocem=[0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0]
 ! fractions of primary BC/POM emissions to go to each mode at emission
@@ -1095,6 +1102,7 @@ ELSE
 END IF
 
 !
+glomap_variables_local%fracbbem=[0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0]
 glomap_variables_local%fracbcem=[0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0]
 glomap_variables_local%fracocem=[0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0]
 ! fractions of primary BC/POM emissions to go to each mode at emission
@@ -1300,6 +1308,7 @@ ELSE
 END IF
 
 !
+glomap_variables_local%fracbbem=[0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0]
 glomap_variables_local%fracbcem=[0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0]
 glomap_variables_local%fracocem=[0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0]
 ! fractions of primary BC/POM emissions to go to each mode at emission
@@ -1506,6 +1515,7 @@ ELSE
 END IF
 
 !
+glomap_variables_local%fracbbem=[0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0]
 glomap_variables_local%fracbcem=[0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0]
 glomap_variables_local%fracocem=[0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0]
 ! fractions of primary BC/POM emissions to go to each mode at emission
@@ -1710,6 +1720,7 @@ ELSE
 END IF
 
 !
+glomap_variables_local%fracbbem=[0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0]
 glomap_variables_local%fracbcem=[0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0]
 glomap_variables_local%fracocem=[0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0]
 ! fractions of primary BC/POM emissions to go to each mode at emission
@@ -1915,6 +1926,7 @@ ELSE
 END IF
 
 !
+glomap_variables_local%fracbbem=[0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0]
 glomap_variables_local%fracbcem=[0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0]
 glomap_variables_local%fracocem=[0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0]
 ! fractions of primary BC/POM emissions to go to each mode at emission
@@ -2119,6 +2131,7 @@ ELSE
 END IF
 
 !
+glomap_variables_local%fracbbem=[0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0]
 glomap_variables_local%fracbcem=[0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0]
 glomap_variables_local%fracocem=[0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0]
 ! fractions of primary BC/POM emissions to go to each mode at emission
@@ -2354,6 +2367,7 @@ END IF
 
 ! Fractions of primary BC/POM emissions to go to each mode at emission
 ! (emit into insoluble Aitken for this setup).
+glomap_variables_local%fracbbem=[0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0]
 glomap_variables_local%fracbcem=[0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0]
 glomap_variables_local%fracocem=[0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0]
 
@@ -2573,6 +2587,7 @@ ELSE
   glomap_variables_local%no_ions(1:ncp)=[3.0,0.0,0.0,0.0,0.0,0.0]
 END IF
 !
+glomap_variables_local%fracbbem=[0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0]
 glomap_variables_local%fracbcem=[0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0]
 glomap_variables_local%fracocem=[0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0]
 ! fractions of primary BC/POM emissions to go to each mode at emission
@@ -2807,6 +2822,7 @@ END IF
 
 ! Fractions of primary BC/POM emissions to go to each mode at emission
 ! (emit into insoluble Aitken for this setup).
+glomap_variables_local%fracbbem=[0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0]
 glomap_variables_local%fracbcem=[0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0]
 glomap_variables_local%fracocem=[0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0]
 

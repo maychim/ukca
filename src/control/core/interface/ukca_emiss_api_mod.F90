@@ -326,7 +326,7 @@ IF (PRESENT(daily_fact)) ncdf_emissions(ecount)%daily_fact = daily_fact
 ! If this emission field feeds into aerosols, set up additional slots for these
 !  (with same tracer name) in the emissions structure
 IF ( ANY(aero_ems_species == tracer_name) ) THEN
-  CALL ukca_def_mode_emiss(tracer_name, lmode_emiss, icp)
+  CALL ukca_def_mode_emiss(tracer_name, lmode_emiss, icp, vert_fact=vert_fact)
   from_emiss = ecount   ! Source of emission for the aerosol modes
   DO imode = 1, nmodes
     IF (lmode_emiss(imode)) THEN

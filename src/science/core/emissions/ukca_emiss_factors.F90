@@ -146,7 +146,7 @@ END IF
 
 ! Ensure that the interf_z array is available as an environment field if needed
 IF (l_ref_snap_prof .OR. vert_fact == 'high_level' .OR.                        &
-    vert_fact == 'single_level') THEN
+    vert_fact == 'single_level' .OR. vert_fact == 'stratos_inj') THEN
   IF (.NOT. ukca_config%l_support_ems_vertprof) THEN
     ierror = 1
     cmessage = 'Emission field ' // field_name // ' has vertical factor ' //   &
@@ -199,7 +199,7 @@ CASE ('step1')
   ! the proportional thicknesses are approximately constant.
   ! SPREAD is required to cast the 2D array total_depth to the same shape as
   ! the 3D slice of zthick.
-CASE ('high_level', 'single_level')
+CASE ('high_level', 'single_level', 'stratos_inj')
   IF (highest_lev < 1 .OR. highest_lev > model_levels) THEN
     ierror = 2  ! Highest level out of range
   ELSE IF (lowest_lev < 1 .OR. lowest_lev > model_levels) THEN

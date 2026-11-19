@@ -853,7 +853,7 @@ IF (ukca_config%l_ukca_inferno) THEN
                                 emissions(iso2_inferno)%three_dim,             &
                                 emissions(iso2_inferno)%values(:,:,:),         &
                                 aer_emmas, aer_emnum, lmode_emiss,             &
-                                emiss_levs, icp)
+                                emiss_levs, icp, emissions(l)%vert_fact))
 
     emissions(iso2_inferno)%values (:,:,:) = 0.0
     CALL ukca_emiss_mode_map(row_length, rows, model_levels,                   &

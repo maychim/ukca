@@ -32,7 +32,7 @@
 MODULE ukca_emiss_mod
 
 USE ukca_emiss_struct_mod, ONLY: ukca_em_struct, ukca_em_struct_init,          &
-                                 ncdf_emissions
+                                 ncdf_emissions, maxlen_emiss_var_name
 
 USE ukca_config_specification_mod, ONLY: ukca_config, glomap_config,           &
                                          i_light_param_off, glomap_variables,  &
@@ -1914,7 +1914,7 @@ END SUBROUTINE ukca_emiss_spatial_vars_init
 SUBROUTINE ukca_emiss_update_mode(row_length, rows, model_levels,              &
                                   tracer_name, three_dim, emiss_values,        &
                                   emmas, emnum, lmode_emiss,                   &
-                                  nlev, icp)
+                                  nlev, icp, vert_fact)
 
 IMPLICIT NONE
 
@@ -1940,6 +1940,9 @@ LOGICAL, INTENT(OUT) :: lmode_emiss(nmodes)
 
 INTEGER, INTENT(OUT) :: nlev  ! Number of levels emission is applied to
 INTEGER, INTENT(OUT) :: icp   ! Aerosol component emission is applied to
+
+CHARACTER (LEN=maxlen_emiss_var_name), INTENT(IN), OPTIONAL :: vert_fact
+                      !vertical_scaling: surface, high_level, stratos_inj
 
 ! Mass (kg/m2/s) and particle volume (nm3/m2/s) emissions for an individual mode
 REAL :: modemass(row_length, rows, model_levels)
@@ -1967,7 +1970,7 @@ IF (lhook) CALL dr_hook(ModuleName//':'//RoutineName, zhook_in, zhook_handle)
 ! Call ukca_def_mode_emiss to obtain emission mask, mode fraction, diameter
 ! and stdev for each mode, as well as component emissions applied to (=icp).
 CALL ukca_def_mode_emiss(tracer_name, lmode_emiss, icp,                        &
-                         mode_frac, mode_diam, mode_stdev)
+                         mode_frac, mode_diam, mode_stdev, vert_fact)
 
 ! emiss%values might only have 1 level, so ensure consistency when assiging to
 ! modemass. All other arrays used below have all levels, so don't need to use
@@ -2105,7 +2108,7 @@ DO imode = 1, nmodes
     IF (.NOT. lfound) THEN
       ! If this happens something has gone wrong in ukca_emiss_init or
       ! ukca_def_mode_emiss
-      WRITE(cmessage,'(2A,3I3)') 'Missing mode emission structure: ',          &
+      WRITE(cmessage,'(A,4I3)') 'Missing mode emission structure: ',          &
         from_emiss, imode, icp, imoment
       ierror = icp
       CALL ereport('UKCA_EMISS_MODE_MAP', ierror, cmessage)

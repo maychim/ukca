@@ -1087,9 +1087,10 @@ IF (ukca_config%l_ukca_intdd) THEN
   END IF
 END IF
 
+
 ! U and V wind on rho levels and geopotential height on theta levels
 ! are required if PLUMERIA is used in ukca_volcanic_so2
-IF (ukca_config%l_ukca_so2ems_plumeria) THEN
+IF (ukca_config%l_ukca_so2ems_plumeria .OR. ukca_config%l_ukca_freitas_prm) THEN
   n = n + 3
   IF (n <= n_max) THEN
     fld_names(n-2) = fldname_u_rho_levels
@@ -1280,7 +1281,8 @@ IF (ukca_config%l_environ_rel_humid) THEN
   ! Relative humidity is required for chemistry or for GLOMAP-mode if
   ! nucleation is active or the Plumeria scheme for volcanic emissions is used
   IF (ukca_config%l_ukca_chem .OR. glomap_config%l_mode_bhn_on .OR.            &
-      ukca_config%l_ukca_so2ems_plumeria) THEN
+      ukca_config%l_ukca_so2ems_plumeria .OR.                                  &
+      ukca_config%l_ukca_freitas_prm) THEN
     n = n + 1
     IF (n <= n_max) fld_names(n) = fldname_rel_humid_frac
   END IF

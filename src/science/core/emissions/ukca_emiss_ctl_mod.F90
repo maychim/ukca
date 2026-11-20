@@ -104,7 +104,18 @@ USE ukca_environment_fields_mod, ONLY: ibvoc_isoprene,  ibvoc_terpene,         &
                                  inferno_nox, inferno_oc, inferno_so2,         &
                                  inferno_c2h4, inferno_c2h6, inferno_c3h8,     &
                                  inferno_hcho, inferno_mecho,                  &
-                                 inferno_nh3, inferno_dms
+                                 inferno_nh3, inferno_dms,                     &
+                                 u_rho_levels, v_rho_levels  !new
+! new
+USE ukca_freitas_plumerise_mod, ONLY: ukca_freitas_plumerise,                  &
+                                      freitas_vert_profile
+
+! locals
+REAL :: bb_sfc  (row_length, rows)               ! stratos_inj BB flux
+REAL :: ztop_lo (row_length, rows)               ! plume top, low bound (m)
+REAL :: ztop_hi (row_length, rows)               ! plume top, high bound (m)
+REAL :: vf_prm  (row_length, rows, model_levels) ! Freitas vertical profile
+
 USE ukca_constants,       ONLY: m_c, m_ch4, m_dms,                             &
                                 m_n, m_no, m_no2, m_s, m_c5h8, m_monoterp,     &
                                 m_ch3oh, m_me2co
@@ -1158,7 +1169,9 @@ IF (ukca_config%l_ukca_scale_ppe) THEN
 END IF
 
 ! ----------------------------------------------------------------------------
-! Call Frietas plume scheme to calculate biomass burning injection height
+! Freitas plumerise model 
+! to calculate biomass burning injection profile
+
 IF (ukca_config%l_ukca_freitas_plumerise) THEN
   ! Total BB emission at the surface in each column, used to find the burning columns
   bb_sfc(:,:) = 0.0
@@ -1167,18 +1180,27 @@ IF (ukca_config%l_ukca_freitas_plumerise) THEN
         .NOT. emissions(l)%l_mode) bb_sfc = bb_sfc + emissions(l)%values(:,:,1)
   END DO
 
-  CALL ukca_freitas_plumerise_mod(row_length, rows, model_levels, bb_sfc,          &
+  CALL ukca_freitas_plumerise(row_length, rows, model_levels, bb_sfc,         &
          r_theta_levels, r_rho_levels, theta, q, p_theta_levels,               &
-         t_theta_levels, rel_humid_frac, u_rho_levels, v_rho_levels,           &
-         vf_prm, ztop_lo, ztop_hi)          ! vf_prm sums to 1 in each column
+         t_theta_levels, u_rho_levels, v_rho_levels, ztop_lo, ztop_hi)
+
+ ! Turn the heights into a vertical profile
+  CALL freitas_vert_profile(row_length, rows, model_levels, r_theta_levels,    &
+         ztop_lo, ztop_hi, vf_prm)
 
   ! Overwrite the static profile in fire columns. This covers the mode
   ! copies too, because they inherited vert_fact = 'stratos_inj'.
   DO l = 1, num_em_flds
     IF (TRIM(emissions(l)%vert_fact) == 'stratos_inj') THEN
       DO k = 1, model_levels
-        WHERE (ztop_hi > 0.0) emissions(l)%vert_scaling_3d(:,:,k) = vf_prm(:,:,k)
+        WHERE (ztop_hi > 0.0) 
+          emissions(l)%vert_scaling_3d(:,:,k) = vf_prm(:,:,k)
       END DO
+      IF (bb_sfc(i,j) > 0.0 .AND. ztop_hi(i,j) <= 0.0) THEN
+        errcode = 1
+        cmessage = 'Freitas plume model failed in a fire column'
+        CALL ereport(ModuleName//':'//RoutineName, errcode, cmessage)
+      END IF
     END IF
   END DO
 END IF

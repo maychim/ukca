@@ -178,6 +178,7 @@ SUBROUTINE ukca_setup(error_code,                                              &
                       l_ukca_inferno_ch4,                                      &
                       l_ukca_so2ems_expvolc,                                   &
                       l_ukca_so2ems_plumeria,                                  &
+                      l_ukca_freitas_prm,                                      &
                       l_ukca_qch4inter,                                        &
                       l_ukca_emsdrvn_ch4,                                      &
                       l_ukca_enable_seadms_ems,                                &
@@ -512,6 +513,7 @@ LOGICAL, OPTIONAL, INTENT(IN) :: l_ukca_inferno
 LOGICAL, OPTIONAL, INTENT(IN) :: l_ukca_inferno_ch4
 LOGICAL, OPTIONAL, INTENT(IN) :: l_ukca_so2ems_expvolc
 LOGICAL, OPTIONAL, INTENT(IN) :: l_ukca_so2ems_plumeria
+LOGICAL, OPTIONAL, INTENT(IN) :: l_ukca_freitas_prm
 LOGICAL, OPTIONAL, INTENT(IN) :: l_ukca_qch4inter
 LOGICAL, OPTIONAL, INTENT(IN) :: l_ukca_emsdrvn_ch4
 LOGICAL, OPTIONAL, INTENT(IN) :: l_ukca_enable_seadms_ems
@@ -1030,6 +1032,9 @@ IF (ukca_config%i_ukca_chem /= i_ukca_chem_off .AND.                           &
     IF (PRESENT(l_ukca_so2ems_plumeria))                                       &
       ukca_config%l_ukca_so2ems_plumeria = l_ukca_so2ems_plumeria
   END IF
+
+ IF PRESENT(l_ukca_freitas_prm) THEN                                           &
+    ukca_config%l_ukca_freitas_prm = l_ukca_freitas_prm
 
   ! Lightning NOx emissions options
   ! Always off for Offline Oxidants chemistry; default to Price & Rind for full

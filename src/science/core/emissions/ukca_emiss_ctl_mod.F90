@@ -110,12 +110,6 @@ USE ukca_environment_fields_mod, ONLY: ibvoc_isoprene,  ibvoc_terpene,         &
 USE ukca_freitas_plumerise_mod, ONLY: ukca_freitas_plumerise,                  &
                                       freitas_vert_profile
 
-! locals
-REAL :: bb_sfc  (row_length, rows)               ! stratos_inj BB flux
-REAL :: ztop_lo (row_length, rows)               ! plume top, low bound (m)
-REAL :: ztop_hi (row_length, rows)               ! plume top, high bound (m)
-REAL :: vf_prm  (row_length, rows, model_levels) ! Freitas vertical profile
-
 USE ukca_constants,       ONLY: m_c, m_ch4, m_dms,                             &
                                 m_n, m_no, m_no2, m_s, m_c5h8, m_monoterp,     &
                                 m_ch3oh, m_me2co
@@ -299,6 +293,12 @@ INTEGER                 :: icp            ! component
 LOGICAL                 :: lmode_emiss(nmodes)   ! modes which are emitted into
                                                  ! for a given emission field
 REAL                    :: f_dms_sea(row_length, rows)  ! DMS flux over sea
+
+! Freitas scheme local variables
+REAL :: bb_sfc  (row_length, rows)               ! stratos_inj BB flux
+REAL :: ztop_lo (row_length, rows)               ! plume top, low bound (m)
+REAL :: ztop_hi (row_length, rows)               ! plume top, high bound (m)
+REAL :: vf_prm  (row_length, rows, model_levels) ! Freitas vertical profile
 
 ! Nitrate arrays
 REAL, ALLOCATABLE :: aer_emmas_nh4(:,:,:,:)
@@ -1172,13 +1172,22 @@ END IF
 ! Freitas plumerise model 
 ! to calculate biomass burning injection profile
 
-IF (ukca_config%l_ukca_freitas_plumerise) THEN
+IF (ukca_config%l_ukca_freitas_prm) THEN
   ! Total BB emission at the surface in each column, used to find the burning columns
   bb_sfc(:,:) = 0.0
   DO l = 1, num_em_flds
     IF (TRIM(emissions(l)%vert_fact) == 'stratos_inj' .AND.                    &
-        .NOT. emissions(l)%l_mode) bb_sfc = bb_sfc + emissions(l)%values(:,:,1)
+        .NOT. emissions(l)%l_mode) 
+      bb_sfc = bb_sfc + emissions(l)%values(:,:,1)
   END DO
+
+  ! The winds are environment fields requested only for this scheme+
+  IF (.NOT. (ALLOCATED(u_rho_levels) .AND. ALLOCATED(v_rho_levels))) THEN
+    errcode  = 1
+    cmessage = 'l_ukca_freitas_prm is true but u_rho_levels/v_rho_levels ' //  &
+               'have not been provided'
+    CALL ereport(ModuleName//':'//RoutineName, errcode, cmessage)
+  END IF
 
   CALL ukca_freitas_plumerise(row_length, rows, model_levels, bb_sfc,         &
          r_theta_levels, r_rho_levels, theta, q, p_theta_levels,               &
@@ -1193,14 +1202,10 @@ IF (ukca_config%l_ukca_freitas_plumerise) THEN
   DO l = 1, num_em_flds
     IF (TRIM(emissions(l)%vert_fact) == 'stratos_inj') THEN
       DO k = 1, model_levels
-        WHERE (ztop_hi > 0.0) 
+        WHERE (ztop_hi(:,:) > 0.0) 
           emissions(l)%vert_scaling_3d(:,:,k) = vf_prm(:,:,k)
+        ENDWHERE
       END DO
-      IF (bb_sfc(i,j) > 0.0 .AND. ztop_hi(i,j) <= 0.0) THEN
-        errcode = 1
-        cmessage = 'Freitas plume model failed in a fire column'
-        CALL ereport(ModuleName//':'//RoutineName, errcode, cmessage)
-      END IF
     END IF
   END DO
 END IF

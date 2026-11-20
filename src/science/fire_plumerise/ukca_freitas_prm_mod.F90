@@ -94,7 +94,7 @@ REAL,    PARAMETER :: wtop   = 1.0       ! w threshold defining the top (m/s)
 CONTAINS
 
 ! ---------------------------------------------------------------------------
-SUBROUTINE freitas_column_plumerise(nk, z_t, z_r, theta_in, qv_in, p_in,     &
+SUBROUTINE freitas_column_plumerise(nk, z_t, theta_in, qv_in, p_in,     &
                                     t_in, u_in, v_in, burnt_area,            &
                                     nflux, heat_flux, ztop, ierr,            &
                                     w_prof, txs_prof)
@@ -104,7 +104,6 @@ SUBROUTINE freitas_column_plumerise(nk, z_t, z_r, theta_in, qv_in, p_in,     &
 !
 !   Input profiles are on host-model levels 1..nk (bottom to top):
 !     z_t      height of the theta levels above the surface (m)
-!     z_r      height of the levels holding u and v above the surface (m)
 !     theta_in potential temperature (K)
 !     qv_in    water vapour mixing ratio (kg/kg)
 !     p_in     pressure (Pa)
@@ -124,7 +123,6 @@ IMPLICIT NONE
 
 INTEGER, INTENT(IN)  :: nk
 REAL,    INTENT(IN)  :: z_t(nk)
-REAL,    INTENT(IN)  :: z_r(nk)
 REAL,    INTENT(IN)  :: theta_in(nk)
 REAL,    INTENT(IN)  :: qv_in(nk)
 REAL,    INTENT(IN)  :: p_in(nk)
@@ -160,11 +158,11 @@ ELSE
   DO iflux = 1, nflux
     IF (heat_flux(iflux) <= 0.0) CYCLE
     IF (PRESENT(w_prof) .AND. PRESENT(txs_prof)) THEN
-      CALL run_plume(nk, z_t, z_r, theta_in, qv_in, p_in, t_in, u_in, v_in, &
+      CALL run_plume(nk, z_t, theta_in, qv_in, p_in, t_in, u_in, v_in, &
                      burnt_area, heat_flux(iflux), ztop(iflux), ierr_run,    &
                      w_prof(:,iflux), txs_prof(:,iflux))
     ELSE
-      CALL run_plume(nk, z_t, z_r, theta_in, qv_in, p_in, t_in, u_in, v_in, &
+      CALL run_plume(nk, z_t, theta_in, qv_in, p_in, t_in, u_in, v_in, &
                      burnt_area, heat_flux(iflux), ztop(iflux), ierr_run)
     END IF
     ierr = MAX(ierr, ierr_run)
@@ -178,7 +176,7 @@ IF (lhook) CALL dr_hook(ModuleName//':'//RoutineName, zhook_out, zhook_handle)
 END SUBROUTINE freitas_column_plumerise
 
 ! ---------------------------------------------------------------------------
-SUBROUTINE run_plume(nk, z_t, z_r, theta_in, qv_in, p_in, t_in, u_in, v_in, &
+SUBROUTINE run_plume(nk, z_t, theta_in, qv_in, p_in, t_in, u_in, v_in, &
                      burnt_area, heat_flux, ztop, ierr, w_prof, txs_prof)
 ! ---------------------------------------------------------------------------
 ! Description:
@@ -188,7 +186,7 @@ SUBROUTINE run_plume(nk, z_t, z_r, theta_in, qv_in, p_in, t_in, u_in, v_in, &
 IMPLICIT NONE
 
 INTEGER, INTENT(IN)  :: nk
-REAL,    INTENT(IN)  :: z_t(nk), z_r(nk), theta_in(nk), qv_in(nk)
+REAL,    INTENT(IN)  :: z_t(nk), theta_in(nk), qv_in(nk)
 REAL,    INTENT(IN)  :: p_in(nk), t_in(nk), u_in(nk), v_in(nk)
 REAL,    INTENT(IN)  :: burnt_area, heat_flux
 REAL,    INTENT(OUT) :: ztop
@@ -207,7 +205,7 @@ ierr = 0
 
 CALL set_grid(prm)
 
-CALL get_env_condition(prm, nk, z_t, z_r, theta_in, qv_in, p_in, t_in,      &
+CALL get_env_condition(prm, nk, z_t, theta_in, qv_in, p_in, t_in,      &
                        u_in, v_in, kmt, ierr)
 
 IF (ierr == 0) CALL fire_properties(prm, heat_flux, burnt_area, ierr)
@@ -257,7 +255,7 @@ prm%dzt(1) = prm%dzt(2) * prm%dzt(2) / prm%dzt(3)
 END SUBROUTINE set_grid
 
 ! ---------------------------------------------------------------------------
-SUBROUTINE get_env_condition(prm, nk, z_t, z_r, theta_in, qv_in, p_in,       &
+SUBROUTINE get_env_condition(prm, nk, z_t, theta_in, qv_in, p_in,       &
                              t_in, u_in, v_in, kmt, ierr)
 ! ---------------------------------------------------------------------------
 ! Description:
@@ -270,7 +268,7 @@ IMPLICIT NONE
 
 TYPE(freitas_column_type), INTENT(IN OUT) :: prm
 INTEGER, INTENT(IN)  :: nk
-REAL,    INTENT(IN)  :: z_t(nk), z_r(nk), theta_in(nk), qv_in(nk)
+REAL,    INTENT(IN)  :: z_t(nk), theta_in(nk), qv_in(nk)
 REAL,    INTENT(IN)  :: p_in(nk), t_in(nk), u_in(nk), v_in(nk)
 INTEGER, INTENT(OUT) :: kmt
 INTEGER, INTENT(OUT) :: ierr
@@ -302,8 +300,8 @@ IF (kmt < 3) THEN
 ELSE
   lnp(:) = LOG(p_in(:))
 
-  CALL htint(nk, u_in,     z_r, kmt, prm%upe,   prm%zt, ierr)
-  CALL htint(nk, v_in,     z_r, kmt, prm%vpe,   prm%zt, ierr)
+  CALL htint(nk, u_in,     z_t, kmt, prm%upe,   prm%zt, ierr)
+  CALL htint(nk, v_in,     z_t, kmt, prm%vpe,   prm%zt, ierr)
   CALL htint(nk, theta_in, z_t, kmt, prm%the,   prm%zt, ierr)
   CALL htint(nk, qv_in,    z_t, kmt, prm%qvenv, prm%zt, ierr)
   CALL htint(nk, t_in,     z_t, kmt, prm%te,    prm%zt, ierr)

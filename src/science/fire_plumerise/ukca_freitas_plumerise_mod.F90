@@ -73,7 +73,7 @@ CONTAINS
 ! ---------------------------------------------------------------------------
 SUBROUTINE ukca_freitas_plumerise(row_length, rows, model_levels, bb_sfc,      &
                                   latitude, longitude,                         &
-                                  r_theta_levels, r_rho_levels, theta, q,      &
+                                  r_theta_levels, theta, q,                    &
                                   p_theta_levels, t_theta_levels,              &
                                   u_theta_levels, v_theta_levels,              &
                                   ztop_lo, ztop_hi)
@@ -93,12 +93,10 @@ REAL, INTENT(IN) :: bb_sfc(row_length, rows)
 REAL, INTENT(IN) :: latitude (row_length, rows)   ! degrees N
 REAL, INTENT(IN) :: longitude(row_length, rows)   ! degrees E
 REAL, INTENT(IN) :: r_theta_levels(row_length, rows, 0:model_levels)
-REAL, INTENT(IN) :: r_rho_levels  (row_length, rows, model_levels)
 REAL, INTENT(IN) :: theta         (row_length, rows, model_levels)  ! K
 REAL, INTENT(IN) :: q             (row_length, rows, model_levels)  ! kg/kg
 REAL, INTENT(IN) :: p_theta_levels(row_length, rows, model_levels)  ! Pa
 REAL, INTENT(IN) :: t_theta_levels(row_length, rows, model_levels)  ! K
-! Winds on rho levels (environment fields; assumed-shape, as allocated there)
 REAL, INTENT(IN) :: u_theta_levels(row_length, rows, model_levels)  ! m/s
 REAL, INTENT(IN) :: v_theta_levels(row_length, rows, model_levels)   ! m/s
 
@@ -109,7 +107,6 @@ REAL, INTENT(OUT) :: ztop_hi(row_length, rows)  ! plume top, high flux (m)
 INTEGER :: i, j, k, ierr
 ! Column profiles passed to the plume model
 REAL :: z_t(model_levels)      ! height of theta levels above surface (m)
-REAL :: z_r(model_levels)      ! height of rho levels above surface (m)
 REAL :: qv(model_levels)       ! water vapour mixing ratio (kg/kg)
 REAL :: th_col(model_levels)   ! potential temperature (K)
 REAL :: p_col(model_levels)    ! pressure (Pa)
@@ -147,7 +144,6 @@ DO j = 1, rows
     ! Column profiles for the plume model
     DO k = 1, model_levels
       z_t(k)    = r_theta_levels(i,j,k) - r_theta_levels(i,j,0)
-      z_r(k)    = r_rho_levels(i,j,k)   - r_theta_levels(i,j,0)
       qv(k)     = q(i,j,k) / (1.0 - q(i,j,k))   ! specific hum. to mix. ratio
       th_col(k) = theta(i,j,k)
       p_col(k)  = p_theta_levels(i,j,k)
@@ -156,7 +152,7 @@ DO j = 1, rows
       v_col(k)  = v_theta_levels(i,j,k)
     END DO
 
-    CALL freitas_column_plumerise(model_levels, z_t, z_r, th_col, qv,        &
+    CALL freitas_column_plumerise(model_levels, z_t, th_col, qv,        &
            p_col, t_col, u_col, v_col, freitas_burnt_area, 2,                &
            [freitas_heat_flux_lo, freitas_heat_flux_hi], ztop, ierr)
 

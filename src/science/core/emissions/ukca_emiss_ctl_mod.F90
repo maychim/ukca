@@ -1177,8 +1177,8 @@ IF (ukca_config%l_ukca_freitas_prm) THEN
   bb_sfc(:,:) = 0.0
   DO l = 1, num_em_flds
     IF (TRIM(emissions(l)%vert_fact) == 'stratos_inj' .AND.                    &
-        .NOT. emissions(l)%l_mode) 
-      bb_sfc = bb_sfc + emissions(l)%values(:,:,1)
+        .NOT. emissions(l)%l_mode) THEN 
+      bb_sfc(:,:) = bb_sfc(:,:) + emissions(l)%values(:,:,1)
   END DO
 
   ! The winds are environment fields requested only for this scheme+

@@ -1090,12 +1090,23 @@ END IF
 
 ! U and V wind on rho levels and geopotential height on theta levels
 ! are required if PLUMERIA is used in ukca_volcanic_so2
-IF (ukca_config%l_ukca_so2ems_plumeria .OR. ukca_config%l_ukca_freitas_prm) THEN
+IF (ukca_config%l_ukca_so2ems_plumeria) THEN
   n = n + 3
   IF (n <= n_max) THEN
     fld_names(n-2) = fldname_u_rho_levels
     fld_names(n-1) = fldname_v_rho_levels
     fld_names(n) = fldname_geopH_on_theta_mlevs
+  END IF
+END IF
+
+! U and V wind on rho levels are required by the Freitas plume-rise model
+! (already requested above if PLUMERIA is used)
+IF (ukca_config%l_ukca_freitas_prm .AND.                                       &
+    .NOT. ukca_config%l_ukca_so2ems_plumeria) THEN
+  n = n + 2
+  IF (n <= n_max) THEN
+    fld_names(n-1) = fldname_u_rho_levels
+    fld_names(n)   = fldname_v_rho_levels
   END IF
 END IF
 

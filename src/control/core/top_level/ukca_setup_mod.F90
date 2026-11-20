@@ -1033,7 +1033,7 @@ IF (ukca_config%i_ukca_chem /= i_ukca_chem_off .AND.                           &
       ukca_config%l_ukca_so2ems_plumeria = l_ukca_so2ems_plumeria
   END IF
 
- IF PRESENT(l_ukca_freitas_prm) THEN                                           &
+ IF (PRESENT(l_ukca_freitas_prm))                                              &
     ukca_config%l_ukca_freitas_prm = l_ukca_freitas_prm
 
   ! Lightning NOx emissions options

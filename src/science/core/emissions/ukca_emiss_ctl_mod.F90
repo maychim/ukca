@@ -1182,6 +1182,7 @@ IF (ukca_config%l_ukca_freitas_prm) THEN
     IF (TRIM(emissions(l)%vert_fact) == 'stratos_inj' .AND.                    &
         .NOT. emissions(l)%l_mode) THEN 
       bb_sfc(:,:) = bb_sfc(:,:) + emissions(l)%values(:,:,1)
+    END IF
   END DO
 
   ! The winds are environment fields requested only for this scheme+
@@ -1206,7 +1207,7 @@ IF (ukca_config%l_ukca_freitas_prm) THEN
 
   CALL ukca_freitas_plumerise(row_length, rows, model_levels, bb_sfc,          &
          latitude, longitude,                                                  &
-         r_theta_levels, r_rho_levels, theta, q, p_theta_levels,               &
+         r_theta_levels, theta, q, p_theta_levels,                             &
          t_theta_levels, u_theta_levels, v_theta_levels, ztop_lo, ztop_hi)
 
  ! Turn the heights into a vertical profile

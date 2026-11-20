@@ -853,7 +853,7 @@ IF (ukca_config%l_ukca_inferno) THEN
                                 emissions(iso2_inferno)%three_dim,             &
                                 emissions(iso2_inferno)%values(:,:,:),         &
                                 aer_emmas, aer_emnum, lmode_emiss,             &
-                                emiss_levs, icp, emissions(l)%vert_fact))
+                                emiss_levs, icp)
 
     emissions(iso2_inferno)%values (:,:,:) = 0.0
     CALL ukca_emiss_mode_map(row_length, rows, model_levels,                   &
@@ -1129,7 +1129,7 @@ DO l = 1, num_em_flds
                                 emissions(l)%three_dim,                        &
                                 emissions(l)%values(:,:,:),                    &
                                 aer_emmas, aer_emnum, lmode_emiss, emiss_levs, &
-                                icp)
+                                icp, emissions(l)%vert_fact)
 
     CALL ukca_emiss_mode_map(row_length, rows, model_levels,                   &
                              aer_emmas, aer_emnum, emiss_levs, icp,            &
@@ -1157,6 +1157,31 @@ IF (ukca_config%l_ukca_scale_ppe) THEN
   END DO
 END IF
 
+! ----------------------------------------------------------------------------
+! Call Frietas plume scheme to calculate biomass burning injection height
+IF (ukca_config%l_ukca_freitas_plumerise) THEN
+  ! Total BB emission at the surface in each column, used to find the burning columns
+  bb_sfc(:,:) = 0.0
+  DO l = 1, num_em_flds
+    IF (TRIM(emissions(l)%vert_fact) == 'stratos_inj' .AND.                    &
+        .NOT. emissions(l)%l_mode) bb_sfc = bb_sfc + emissions(l)%values(:,:,1)
+  END DO
+
+  CALL ukca_freitas_plumerise_mod(row_length, rows, model_levels, bb_sfc,          &
+         r_theta_levels, r_rho_levels, theta, q, p_theta_levels,               &
+         t_theta_levels, rel_humid_frac, u_rho_levels, v_rho_levels,           &
+         vf_prm, ztop_lo, ztop_hi)          ! vf_prm sums to 1 in each column
+
+  ! Overwrite the static profile in fire columns. This covers the mode
+  ! copies too, because they inherited vert_fact = 'stratos_inj'.
+  DO l = 1, num_em_flds
+    IF (TRIM(emissions(l)%vert_fact) == 'stratos_inj') THEN
+      DO k = 1, model_levels
+        WHERE (ztop_hi > 0.0) emissions(l)%vert_scaling_3d(:,:,k) = vf_prm(:,:,k)
+      END DO
+    END IF
+  END DO
+END IF
 
 ! ----------------------------------------------------------------------
 ! Inject emissions and do tracer mixing

@@ -299,6 +299,9 @@ REAL :: bb_sfc  (row_length, rows)               ! stratos_inj BB flux
 REAL :: ztop_lo (row_length, rows)               ! plume top, low bound (m)
 REAL :: ztop_hi (row_length, rows)               ! plume top, high bound (m)
 REAL :: vf_prm  (row_length, rows, model_levels) ! Freitas vertical profile
+REAL :: u_theta_levels (row_length, rows, model_levels) ! u on theta levels
+REAL :: v_theta_levels (row_length, rows, model_levels) ! v on theta levels
+ 
 
 ! Nitrate arrays
 REAL, ALLOCATABLE :: aer_emmas_nh4(:,:,:,:)
@@ -1189,9 +1192,22 @@ IF (ukca_config%l_ukca_freitas_prm) THEN
     CALL ereport(ModuleName//':'//RoutineName, errcode, cmessage)
   END IF
 
-  CALL ukca_freitas_plumerise(row_length, rows, model_levels, bb_sfc,         &
+  ! Regrid u and v wind from rho to theta levels
+  DO k = 1, model_levels - 1
+    u_theta_levels(:,:,k) = (u_rho_levels(1:row_length,1:rows,k) +            &
+                             u_rho_levels(1:row_length,1:rows,k+1)) / 2.0
+    v_theta_levels(:,:,k) = (v_rho_levels(1:row_length,1:rows,k) +            &
+                             v_rho_levels(1:row_length,1:rows,k+1)) / 2.0
+  END DO
+  u_theta_levels(:,:,model_levels) =                                           &
+                          u_rho_levels(1:row_length,1:rows,model_levels)
+  v_theta_levels(:,:,model_levels) =                                           &
+                          v_rho_levels(1:row_length,1:rows,model_levels)
+
+  CALL ukca_freitas_plumerise(row_length, rows, model_levels, bb_sfc,          &
+         latitude, longitude,                                                  &
          r_theta_levels, r_rho_levels, theta, q, p_theta_levels,               &
-         t_theta_levels, u_rho_levels, v_rho_levels, ztop_lo, ztop_hi)
+         t_theta_levels, u_theta_levels, v_theta_levels, ztop_lo, ztop_hi)
 
  ! Turn the heights into a vertical profile
   CALL freitas_vert_profile(row_length, rows, model_levels, r_theta_levels,    &

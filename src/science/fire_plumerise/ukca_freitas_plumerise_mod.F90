@@ -34,6 +34,8 @@
 MODULE ukca_freitas_plumerise_mod
 
 USE ukca_freitas_prm_mod,    ONLY: freitas_column_plumerise
+USE umPrintMgr,              ONLY: umPrint, umMessage, PrintStatus,          &
+                                   PrStatus_Normal
 USE ereport_mod,             ONLY: ereport
 USE errormessagelength_mod,  ONLY: errormessagelength
 USE parkind1,                ONLY: jpim, jprb      ! DrHook
@@ -70,9 +72,10 @@ CONTAINS
 
 ! ---------------------------------------------------------------------------
 SUBROUTINE ukca_freitas_plumerise(row_length, rows, model_levels, bb_sfc,      &
+                                  latitude, longitude,                         &
                                   r_theta_levels, r_rho_levels, theta, q,      &
                                   p_theta_levels, t_theta_levels,              &
-                                  u_rho_levels, v_rho_levels,                  &
+                                  u_theta_levels, v_theta_levels,              &
                                   ztop_lo, ztop_hi)
 ! ---------------------------------------------------------------------------
 ! Description:
@@ -87,6 +90,8 @@ INTEGER, INTENT(IN) :: row_length, rows, model_levels
 ! Total stratos_inj biomass-burning flux in each column (kg m-2 s-1)
 REAL, INTENT(IN) :: bb_sfc(row_length, rows)
 ! Distance from the centre of the Earth (m); level 0 is the surface
+REAL, INTENT(IN) :: latitude (row_length, rows)   ! degrees N
+REAL, INTENT(IN) :: longitude(row_length, rows)   ! degrees E
 REAL, INTENT(IN) :: r_theta_levels(row_length, rows, 0:model_levels)
 REAL, INTENT(IN) :: r_rho_levels  (row_length, rows, model_levels)
 REAL, INTENT(IN) :: theta         (row_length, rows, model_levels)  ! K
@@ -94,8 +99,8 @@ REAL, INTENT(IN) :: q             (row_length, rows, model_levels)  ! kg/kg
 REAL, INTENT(IN) :: p_theta_levels(row_length, rows, model_levels)  ! Pa
 REAL, INTENT(IN) :: t_theta_levels(row_length, rows, model_levels)  ! K
 ! Winds on rho levels (environment fields; assumed-shape, as allocated there)
-REAL, INTENT(IN) :: u_rho_levels(:,:,:)                             ! m/s
-REAL, INTENT(IN) :: v_rho_levels(:,:,:)                             ! m/s
+REAL, INTENT(IN) :: u_theta_levels(row_length, rows, model_levels)  ! m/s
+REAL, INTENT(IN) :: v_theta_levels(row_length, rows, model_levels)   ! m/s
 
 REAL, INTENT(OUT) :: ztop_lo(row_length, rows)  ! plume top, low flux (m)
 REAL, INTENT(OUT) :: ztop_hi(row_length, rows)  ! plume top, high flux (m)
@@ -127,10 +132,10 @@ IF (lhook) CALL dr_hook(ModuleName//':'//RoutineName, zhook_in, zhook_handle)
 ztop_lo(:,:) = 0.0
 ztop_hi(:,:) = 0.0
 
-IF (SIZE(u_rho_levels, 3) < model_levels .OR.                                 &
-    SIZE(v_rho_levels, 3) < model_levels) THEN
+IF (SIZE(u_theta_levels, 3) < model_levels .OR.                                 &
+    SIZE(v_theta_levels, 3) < model_levels) THEN
   errcode  = 1
-  cmessage = 'u_rho_levels/v_rho_levels not available on all model levels'
+  cmessage = 'u_theta_levels/v_theta_levels not available on all model levels'
   CALL ereport(ModuleName//':'//RoutineName, errcode, cmessage)
 END IF
 
@@ -147,8 +152,8 @@ DO j = 1, rows
       th_col(k) = theta(i,j,k)
       p_col(k)  = p_theta_levels(i,j,k)
       t_col(k)  = t_theta_levels(i,j,k)
-      u_col(k)  = u_rho_levels(i,j,k)
-      v_col(k)  = v_rho_levels(i,j,k)
+      u_col(k)  = u_theta_levels(i,j,k)
+      v_col(k)  = v_theta_levels(i,j,k)
     END DO
 
     CALL freitas_column_plumerise(model_levels, z_t, z_r, th_col, qv,        &
@@ -170,6 +175,13 @@ DO j = 1, rows
 
     ztop_lo(i,j) = ztop(1)
     ztop_hi(i,j) = ztop(2)
+
+    IF (PrintStatus >= PrStatus_Normal) THEN
+      WRITE(umMessage,'(A,2I5,A,2F9.3,A,2F9.1)') 'Freitas: i,j=', i, j,        &
+            ' lat,lon=', latitude(i,j), longitude(i,j),                       &
+            ' ztop_lo,hi(m)=', ztop(1), ztop(2)
+      CALL umPrint(umMessage, src=RoutineName)
+    END IF
 
   END DO
 END DO
